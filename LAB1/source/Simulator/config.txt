@@ -1,0 +1,4 @@
+./../fuzzyControl
+3
+20
+10

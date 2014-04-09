@@ -1,0 +1,168 @@
+# Uputa za prvi dio prvog projekta.
+# Prvi dio projekta imat će 3 dijela.
+# 1. dio: potpora za neizrazite skupove (35% bodova)
+# 2. dio: potpora za neizrazite relacije (25% bodova)
+# 3. dio: neizrazito upravljanje (40% bodova)
+# Bodovi u zagradama su dani relativno s obzirom na
+# 1/3 bodova koje projekt ukupno nosi.
+
+# Prvi dio prvog dijela projekta čini podsustav za potporu
+# rada s neizrazitim skupovima. Ideja je napraviti potrebnu
+# programsku strukturu i metode koje će omogućiti definiranje
+# i rad s neizrazitim skupovima kako je napisano u ovom dokumentu.
+# Ako napravite programsku implementaciju koja nudi sve opisane
+# funkcionalnosti ali samo na način da ih korisnik piše direktno
+# u izvornom kodu, od broja bodova koje nosi ovaj dio (35%) možete ukupno
+# dobiti 2/3 bodova. Preostalih 1/3 bodova dobit ćete ako implementirate
+# i parser koji će protumačiti ovu datoteku i izvesti kod koji je tu
+# napisan (ili alternativno, ako program dozvoljava zadavanje retka po
+# retka u konzoli i uživo ga interpretira i izvodi; kao da radite malu
+# interaktivnu konzolu).
+
+# Komentari započinju znakom ljestvi.
+# Radimo uz ograničenje da će cjelokupna naredba uvijek
+# biti definirana u jednom retku.
+# 
+# U nastavku ćemo definirati nekoliko domena.
+# -------------------------------------------
+d1: domain enumerated {x1, x2, x3, x4};
+d100: domain enumerated {a, b, c, d};
+d2: domain integer -2 to 10 step 1;
+d3: domain real -5 to 5 step 0.1;
+d4: domain cartesian d1,d2,d3;
+
+# Slijede definicije neizrazitih skupova nabrajanjem.
+# Elementi se mogu razdvajati bilo znakom +, bilo znakom
+# zarez.
+# ------------------------------------------------------
+f1: fuzzyset @ d1 is {0/x1, 1/x2, 0.5/x3};
+f2: fuzzyset @ d1 is {1/x1, 0.5/x2, 0/x3};
+f3: fuzzyset @ d2 is {0.2/2 + 0.4/3 + 1/4 + 0.4/5 + 0.2/6};
+f4: fuzzyset @ d3 is {0.2/0.2 + 0.4/0.3 + 1/0.4 + 0.4/0.5 + 0.2/0.6};
+# ako su elementi skupa n-torke, navode se u oblim zagradama kao par
+f5: fuzzyset @ d4 is {0.1/(x1,2,0.3) + 1/(x1,2,0.5) + 0.3/(x3,6,4.1)};
+# Zagrade su dozvoljene i za jednostavne elemente:
+f6: fuzzyset @ d1 is {0/(x1), 1/(x2), 0.5/(x3)};
+
+# Slijede definicije neizrazitih skupova preko funkcija.
+# ------------------------------------------------------
+f7: fuzzyset @ d3 is gamma(3,5);
+f8: fuzzyset @ d3 is lambda(3,4,5);
+f9: fuzzyset @ d3 is l(3,5);
+f10: fuzzyset @ d3 is pi(0, 2, 3, 5);
+# Sljedeće definira neizraziti skup {0/x1 + 0.5/x2 + 1/x3 + 1/x4}
+f11: fuzzyset @ d1 is gamma(x1,x3);
+
+
+# Definicija operatora:
+# Ako se drugačije ne definira, vrijedi *=ZadehT, +=ZadehS, !=ZadehNot
+set operator * to HammacherT(0.5);
+set operator + to HammacherS(0.5);
+set operator ! to ZadehNot;
+# Postojat će još i operator ->, o njemu više kod relacija.
+# set operator -> to Mamdani;
+# Prioriteti operatora su (od najjačeg): !, *, +, ->
+
+# Slijede definicije neizrazitih operacija. 'expr' je kljucna rijec
+# koja govori da slijedi izraz kojim je definiran neizraziti skup.
+# U primjeru ispod domena je d1 što se zaključuje iz izraza.
+# 
+f12: fuzzyset expr f1*!f2;
+# Izraz ispod treba javiti grešku: f1 i f7 imaju različite domene.
+f13: fuzzyset expr !(f1 * f7);
+f14: fuzzyset expr f1->f2;
+#f15: fuzzyset expr (f1->f2)+(f1->f2);
+f100: fuzzyset expr (f1+f1)*f2;
+
+# Ispis neizrazitog skupa f1 na ekran.
+#write f1;
+
+# Ispis neizrazitog skupa f12 na ekran.
+#write f12;
+
+# Redefinicija neizrazitog skupa f1. Ovo smije
+# uspjeti jedino ako je nova domena identična staroj.
+f1: fuzzyset @ d1 is {1/x1, 1/x2, 0.5/x3};
+
+# Ispis nove vrijednosti neizrazitog skupa f1 na ekran.
+write f1;
+
+# Ispis neizrazitog skupa f12 na ekran koji u obzir uzima
+# novu vrijednost neizrazitog skupa f1.
+write f12;
+
+# Dodatni naputci. Operatori + i * zahtjevaju da su oba operanda 
+# neizraziti skupovi definirani nad ISTOM domenom, i generiraju
+# neizrazit skup nad tom domenom.
+
+# Operator ! vraća neizraziti skup nad istom domenom nad kojom je
+# i neizraziti skup nad kojim djeluje.
+
+# Operator -> vraća neizraziti skup nad domenom koja je kartezijev
+# produkt domena s lijeve i desne strane. Primjerice, f1->f3
+# bi generirao neizraziti skup nad d1xd2 a f1->f2 nad d1xd1.
+# Primjer: imamo izraz f1 -> f2. Tada je rezultat fuzzyset nad
+# d1,d2 takav da vrijedi: za a iz d1 i b iz d2, par (a,b) neizrazitom
+# skupu f1 -> f2 pripada sa stupnjem pripadnosti min(f1(a),f2(b))
+# gdje koristimo min ako je -> Mamdani, odnosno neki drugi kombinator
+# za druge moguće operacije koje ćemo učiti.
+
+# Prijedlog za pomoć pri implementaciji. 
+# --------------------------------------
+# Definirajte razred/sučelje Domain koje modelira domenu
+# na sljedeći način.
+# class/interface Domain {
+#   Object[] fromStringRepresentation(String[] value);
+#   int getIndexOfElement(Object[] value);
+#   Object[] elementAt(int index);
+#   long getCardinality();
+#   Domain[] getDomainComponents();
+# }
+
+# Ideja je da neizraziti skupovi UVIJEK interno rade s domenom koja
+# je niz nenegativnih cijelih brojeva. Primjerice, ako imamo domenu:
+# d1: domain enumerated {x1, x2, x3, x4};
+# elementima ćemo dodjeliti indekse: x1=>0, x2=>1, x3=>2, x4=>3.
+# d2: domain integer -2 to 10 step 1;
+# ćemo dodijeliti -2=>0, -1=>1, 0=>2, ..., 10=>12, itd.
+# Ako je domena kartezijev produkt, opet se SVI mogući uređeni parovi
+# vrijednosti mogu numerirati i na taj način im pridijeliti indeks.
+
+# Ideja metode:
+#  Object[] fromStringRepresentation(String[] value);
+# je napraviti ispravnu konverziju tipova. Ako je neizraziti skup definiran
+# nad "real -5 to 5 step 0.1" x "enumerated {x1, x2, x3, x4}", ideja je da vrijedi:
+# fromStringRepresentation("2.1","x2") => {new Double(2.1), new String("x2")}
+# Metoda getIndexOfElement(Object[] value) prima upravo takav tipski korektan
+# element domene i vraća njegov redni broj (poredak elemenata možete definirati sami
+# ali mora biti jednoznačan).
+# Metoda elementAt(int index) radi suprotno: prima indeks i vraća tipski korektan 
+# element domene.
+
+# Metoda getCardinality() vraća kardinalitet domene.
+# Metoda Domain[] getDomainComponents() vraća polje čiji su elementi elementarne
+# domene od kojih je domena izgrađena. Ako je domena jednostavna (kao u našem primjeru
+# domene d1, d2 i d3, metoda vraća polje sa samo jednim objektom: samim sobom.
+# Ako je domena kartezijev produkt drugih domena, polje će sadržavati upravo te
+# domene kao svoje elemente. Npr. za d4 metoda bi vratila polje [d1,d2,d3] gdje su 
+# elementi reference na dotične objekte (ne doslobno imena "d1"...).
+
+# Definirajte sučelje/razred 
+# neizraziti skup kao (prikazan je kostur):
+# class/interface FuzzySet {
+#   Domain getDomain();
+#   double getMembershipFor(Object[] value);
+# }
+
+# Različite vrste fuzzy skupova sada će biti varijante implementacija
+# ovog razreda. Primjerice, jedna implementacija može interno imati polje
+# koje za svaki element čuva vrijednost funkcije pripadnosti. Kada korisnik
+# pozove getMembershipFor(Object[] value), implementacija će pitati domenu 
+# da element konvertira u indeks i potom počitati iznos funkcije pripadnosti
+# na tom indeksu.
+
+# Implementacija operatora + će raditi slično: u konstruktoru će primiti 
+# reference na prvi i drugi neizraziti skup i zapamtit će ih. Kada korisnik pozove
+# getMembershipFor(Object[] value), metoda će pitati lijevi skup za iznos funkcije
+# pripadnosti, zatim desni skup za iznos funkcije pripadnosti i potom vratiti veći
+# od njih, ako govorimo o Zadehovoj implementaciji unije (odnosno logičkog-ili).

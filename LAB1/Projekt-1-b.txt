@@ -1,0 +1,140 @@
+# Uputa za drugi dio prvog projekta.
+# Prvi dio projekta imat će 3 dijela.
+# 1. dio: potpora za neizrazite skupove (35% bodova)
+# 2. dio: potpora za neizrazite relacije (25% bodova)
+# 3. dio: neizrazito upravljanje (40% bodova)
+# Bodovi u zagradama su dani relativno s obzirom na
+# 1/3 bodova koje projekt ukupno nosi.
+
+# Drugi dio prvog dijela projekta čini podsustav za potporu
+# radu s neizrazitim relacijama. Pri tome nije potrebno definirati
+# novi tip objekata: neizrazite relacije jesu neizraziti skupovi
+# a za njih ste već implementirali sve potrebne zajedničke operacije
+# (unije, presjeke, komplemente). Stoga sada trebate samo dodati
+# nekoliko algoritama za dodatne operacije opisane u nastavku.
+
+# U okviru ovog dijela dodat ćete potporu za:
+# a) nekoliko jednostavnih testova
+# b) projekciju relacije
+# c) cilindrično proširenje relacije
+# d) kompoziciju relacije
+
+# Ako napravite programsku implementaciju koja nudi sve opisane
+# funkcionalnosti ali samo na način da ih korisnik piše direktno
+# u izvornom kodu, od broja bodova koje nosi ovaj dio (25%) možete ukupno
+# dobiti 3/4 bodova. Preostalih 1/4 bodova dobit ćete ako implementirate
+# i parser koji će protumačiti ovu datoteku i izvesti kod koji je tu
+# napisan (ili alternativno, ako program dozvoljava zadavanje retka po
+# retka u konzoli i uživo ga interpretira i izvodi; kao da radite malu
+# interaktivnu konzolu). Napomena: ovo bi trebala biti samo nadogradnja
+# na rješenje prethodnog dijela projekta, pa se i primjeri oslanjaju na
+# tu postojeću funkcionalnost.
+
+# a) dio
+# --------------------------------------------------------------------
+# Neka imamo domenu:
+d1: domain enumerated {x1, x2, x3, x4};
+d2: domain cartesian d1,d1;
+# i sljedeću relaciju
+f1: fuzzyset @ d2 is {1/(x1,x1), 1/(x2,x2), 1/(x3,x3), 1/(x4,x4), 0.5/(x3,x4), 0.5/(x4,x3), 0.8/(x3,x2)};
+
+# potrebno je implementirati sljedeće naredbe koje rade isključivo nad binarnom relacijom
+# definiranom nad kartezijevim produktom neke domene sa samom sobom; poziv u ostalim slučajevima
+# treba prijaviti pogrešku.
+
+# Poziv će na zaslon ispisati: "f1 je simetrična? NE" jer je nije f1 simetrična relacija.
+# Da je, umjesto "NE" pisalo bi "DA".
+testSymmetric f1;
+
+# Poziv će na zaslon ispisati: "f1 je refleksivna? DA" jer je f1 refleksivna relacija.
+# Da nije, umjesto "DA" pisalo bi "NE".
+testReflexive f1;
+
+# Poziv će na zaslon ispisati: "f1 je max-min tranzitivna? NE" jer je f1 nije max-min tranzitivna relacija.
+# Da je, umjesto "NE" pisalo bi "DA". Kao drugi argument treba dozvoliti 'max-min' te 'max-product'.
+testTransitive f1, 'max-min';
+
+# Poziv će na zaslon ispisati: "f1 je max-min-neizrazita relacija ekvivalencije? NE" jer je f1 nije max-min-neizrazita 
+# relacija ekvivalencije. Da je, umjesto "NE" pisalo bi "DA". Kao drugi argument treba dozvoliti 'max-min' te 'max-product'.
+testFuzzyEquivalence f1, 'max-min';
+
+
+# b) projekcija relacije
+# --------------------------------------------------------------------
+
+# Neka su definirane domene:
+d4: domain integer -2 to 10 step 1;
+d5: domain cartesian d1,d4,d1;
+d6: domain cartesian d4,d1;
+
+f2: fuzzyset @ d5 is {0.1/(x1,2,x1) + 1/(x2,2,x2) + 1/(x3,3,x3)};
+
+# Izračun projekcije relacije f2 na domenu d6. Da bi operacija bila legalna,
+# domena d6 mora biti podskup domene na kojoj je definiran f2 (inače javiti pogrešku).
+# Također, paziti na redosljed domena: f2 je definiran nad d1xd4xd1, projekcija se traži 
+# nad d4xd1 (kraj) pa se projekcija računa tako da se traži maksimum po '_' za sve 
+# parove (_,x,y).
+
+f3: fuzzyset project f2 @ d6;
+
+# Da je tražena projekcija na d1xd1, gledali bismo sve parove (x,_,y); da je tražena 
+# projekcija na d1, ponašanje ne bi bilo jednoznačno pa ili prijavite pogrešku, ili ga
+# implementirajte na neki od načina; naime, alternative su ili gledati (x,_,_) ili gledati
+# (_,_,x). Uočite međutim da je legalno tražiti projekciju koja odjednom uklanja više od
+# jedne domene. Primjerice, projekcija na d4 je u ovom primjeru jednoznačna i gledamo
+# parove (_,x,_).
+
+# c) cilindrično proširenje
+# --------------------------------------------------------------------
+
+# Neka je dan neizraziti skup:
+
+f4: fuzzyset @ d6 is {0.1/(2,x1) + 1/(2,x2) + 1/(3,x3)};
+
+# Njegovo cilindrično proširenje na d5 stvara se na sljedeći način:
+
+f5: fuzzyset cylindrical_extension  f4 @ d5;
+
+# Cilindrično proširenje se također može raditi na više domena odjednom. Primjerice,
+# ako imamo neizraziti skup nad d4, možemo ga odmah proširiti na d5 u jednom koraku.
+# Opet, ako postupak nije u nekim situacijama jednoznačan, ili prijavite pogrešku ili
+# ga implementirajte na neki od mogućih načina (da ne kompliciramo dodatnom sintaksom koja
+# bi pomogla u razrješavaju takvih stvari).
+
+# d) kompozicija relacija
+# --------------------------------------------------------------------
+
+# Kompozicija relacija vrlo ja važan mehanizam koji se između ostaloga koristi i u
+# neizrazitom zaključivanju. Za primjere najprije pogledajte u knjizi poglavlje 4,
+# primjer 14 i primjer 15.
+
+# Evo nekoliko slučajeva kompozicije. Za sada je primjer simbolički, slova
+# X,Y,Z,W,V,U označavaju domene.
+# Kompozicija XxYxZ o YxZxWxV daje relaciju nad XxWxV, ulančavate (x,_,_) i (_,_,w,v).
+# Kompozicija U o UxU daje relaciju nad U, ulančavate (_) i (_,u).
+# Kompozicija UxU o UxU daje relaciju nad UxU, ulančavate (u1,_) i (_,u2).
+# Kompozicija XxY o YxZ daje relaciju nad XxZ, ulančavate (x,_) i (_,z).
+# Kompozicija XxYxZ o XxYxZxWxV daje relaciju nad WxV, ulančavate (_,_,_) i (_,_,_,w,v).
+
+# Što iz ovoga možemo zaključiti. Implementirajte sljedeću ponašanje: ako su obje relacije
+# binarne, tada su općenito oblika XxY o YxW i rezultat je nad XxW (ako su obje relacije
+# binarne a nisu tog oblika, javite grešku).
+# Ako obje relacije nisu binarne, tada mora vrijediti da je prva domena kartezijev produkt
+# oblika početak x zajedničko a druga domena oblika zajedničko x kraj, i tada je rezultat
+# definiran kao relacija nad početak x kraj; početak, zajedničko i kraj pri tome označava
+# kartezijev produkt jedne ili više domena. Npr. u prvom primjeru gore, početak je X,
+# zajedničko je YxZ, kraj je WxV. U slučaju da nije jasno što napraviti (primjerice,
+# UxU o UxUxU, gdje bi rezultat mogao biti definiran nad UxUxU ili nad U, ili javite pogrešku,
+# ili implementirajte jednu od mogućih interpretacija).
+
+f6: fuzzyset composition f1, f1 using 'max-min';
+
+
+# Treba podržati 'max-min' te 'max-product' kao vrste kompozicije. "using" je samo ključna riječ
+# koja posješuje čitljivost koda.
+
+# Ispis relacije na ekran.
+write f6;
+
+# rezultat bi trebao biti (poredak ovisi o Vašoj implementaciji):
+# {1/(x1,x1), 1/(x2,x2), 1/(x3,x3), 1/(x4,x4), 0.5/(x3,x4), 0.5/(x4,x3), 0.8/(x3,x2), 0.5/(x4,x2)};
